@@ -69,7 +69,21 @@ module ActiveRecord
             table = schema
             schema = nil
           end
-          PostgreSQL::Name.new(schema, table)
+
+          name = PostgreSQL::Name.new(schema, table)
+
+          if schema
+            # split happened, did it happen because of spaces in an unquoted string? See #26721
+            if !string.include?(".") && string =~ /\s/
+              ActiveSupport::Deprecation.warn(<<-MSG.squish)
+                Specifying schema with a space is deprecated.
+                Please use dot syntax: #{"'\"#{name.schema}\".\"#{name.identifier}\"'"}
+                To use spaces in a table name, use quotes: #{"'\"#{string}\"'"}
+              MSG
+            end
+          end
+
+          name
         end
       end
     end
